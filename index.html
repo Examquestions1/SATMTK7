@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="id" translate="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ujian Akhir Semester Genap SMPN 38 Bandar Lampung</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 untuk Popup yang elegan di HP -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Mencegah seleksi teks dan terjemahan browser */
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            background-color: #f3f4f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Mencegah highlight biru saat di-tap di HP */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .option-label {
+            transition: all 0.2s ease;
+        }
+        .option-input:checked + .option-label {
+            background-color: #ebf5ff;
+            border-color: #3b82f6;
+        }
+        
+        /* Grid untuk daftar soal */
+        .grid-soal {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        @media (min-width: 640px) {
+            .grid-soal { grid-template-columns: repeat(8, 1fr); }
+        }
+    </style>
+</head>
+<body class="text-gray-800 h-screen flex flex-col" oncontextmenu="return false;">
+
+    <!-- APP CONTAINER (Max width for mobile feel on desktop) -->
+    <div class="w-full max-w-2xl mx-auto bg-white min-h-screen shadow-lg flex flex-col relative overflow-hidden">
+        
+        <!-- HEADER -->
+        <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center z-10">
+            <div>
+                <h1 class="text-lg font-bold leading-tight">UAS GENAP</h1>
+                <p class="text-xs text-blue-200">SMPN 38 Bandar Lampung</p>
+            </div>
+            <div id="header-info" class="text-right hidden">
+                <div class="text-lg font-bold" id="timer-display">90:00</div>
+                <div class="text-xs text-red-200" id="warning-display">Peringatan: 0/2</div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-grow overflow-y-auto relative pb-20 p-4">
+            
+            <!-- SECTION 1: LOGIN / FORM -->
+            <div id="login-section" class="flex flex-col items-center justify-center min-h-[70vh]">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Tut_Wuri_Handayani.svg/200px-Tut_Wuri_Handayani.svg.png" alt="Logo" class="w-24 h-24 mb-4 object-contain opacity-80" onerror="this.style.display='none'">
+                <h2 class="text-2xl font-bold mb-6 text-center">Form Identitas Ujian</h2>
+                
+                <div class="w-full max-w-sm space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-700">Nama Lengkap Siswa</label>
+                        <input type="text" id="student-name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Masukkan nama lengkap...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-700">Kelas</label>
+                        <select id="student-class" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">-- Pilih Kelas --</option>
+                            <option value="7 A">7 A</option>
+                            <option value="7 B">7 B</option>
+                            <option value="7 C">7 C</option>
+                            <option value="7 D">7 D</option>
+                            <option value="7 E">7 E</option>
+                            <option value="7 F">7 F</option>
+                        </select>
+                    </div>
+                    
+                    <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-sm mt-4">
+                        <p class="font-bold text-yellow-800 mb-1"><i class="fas fa-exclamation-triangle"></i> PERATURAN UJIAN:</p>
+                        <ul class="list-disc pl-5 text-yellow-700 space-y-1">
+                            <li>Waktu 90 Menit.</li>
+                            <li>Dilarang keluar aplikasi/ganti tab.</li>
+                            <li>Maksimal 2 kali peringatan. Peringatan ke-3 ujian otomatis dikumpulkan!</li>
+                        </ul>
+                    </div>
+
+                    <button onclick="startExam()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-200 mt-6 text-lg">
+                        Mulai Ujian
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 2: EXAM INTERFACE -->
+            <div id="exam-section" class="hidden">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b">
+                    <span class="font-bold text-gray-500">Soal <span id="current-question-num" class="text-blue-600 text-xl">1</span> / 40</span>
+                    <button onclick="toggleQuestionList()" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm font-semibold text-gray-700">
+                        <i class="fas fa-th mr-1"></i> Daftar Soal
+                    </button>
+                </div>
+
+                <!-- Question Content -->
+                <div id="question-text" class="text-lg mb-6 leading-relaxed text-gray-800">
+                    <!-- Text soal akan dimuat disini -->
+                </div>
+
+                <!-- Options -->
+                <div id="options-container" class="space-y-3">
+                    <!-- Opsi akan dimuat disini -->
+                </div>
+            </div>
+
+            <!-- SECTION 3: RESULT INTERFACE -->
+            <div id="result-section" class="hidden pb-10">
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center mb-6">
+                    <h2 class="text-2xl font-bold text-blue-800 mb-2">Ujian Selesai!</h2>
+                    <p class="text-gray-600 mb-4" id="result-student-info">Nama - Kelas</p>
+                    
+                    <div class="text-5xl font-black text-blue-600 mb-4" id="result-score">100</div>
+                    
+                    <div class="flex justify-center space-x-6 text-sm">
+                        <div class="text-green-600"><i class="fas fa-check-circle"></i> Benar: <span id="result-correct" class="font-bold text-lg">40</span></div>
+                        <div class="text-red-600"><i class="fas fa-times-circle"></i> Salah: <span id="result-wrong" class="font-bold text-lg">0</span></div>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-lg mb-4 border-b pb-2">Review & Pembahasan</h3>
+                <div id="review-container" class="space-y-4">
+                    <!-- Pembahasan dimuat disini -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- FOOTER NAVIGATION (Only visible during exam) -->
+        <footer id="exam-footer" class="hidden bg-white border-t p-3 flex justify-between items-center absolute bottom-0 w-full z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+            <button onclick="prevQuestion()" id="btn-prev" class="px-5 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-lg disabled:opacity-50">
+                <i class="fas fa-chevron-left mr-1"></i> Prev
+            </button>
+            <button onclick="submitExamPrompt()" id="btn-submit" class="hidden px-6 py-2.5 bg-red-500 text-white font-bold rounded-lg shadow-md">
+                Kumpulkan
+            </button>
+            <button onclick="nextQuestion()" id="btn-next" class="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg shadow-md disabled:opacity-50">
+                Next <i class="fas fa-chevron-right ml-1"></i>
+            </button>
+        </footer>
+
+        <!-- QUESTION LIST MODAL (Overlay) -->
+        <div id="question-list-modal" class="hidden absolute inset-0 bg-white z-50 flex flex-col h-full">
+            <div class="bg-gray-100 p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg">Daftar Soal</h3>
+                <button onclick="toggleQuestionList()" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-grow">
+                <div id="grid-soal-container" class="grid-soal">
+                    <!-- Kotak nomor dimuat disini -->
+                </div>
+                
+                <div class="mt-8 flex items-center justify-center space-x-4 text-sm text-gray-600">
+                    <div class="flex items-center"><div class="w-4 h-4 bg-blue-600 rounded-sm mr-2"></div> Sudah dijawab</div>
+                    <div class="flex items-center"><div class="w-4 h-4 bg-white border border-gray-300 rounded-sm mr-2"></div> Belum dijawab</div>
+                </div>
+            </div>
+            <div class="p-4 border-t">
+                <button onclick="toggleQuestionList()" class="w-full py-3 bg-gray-800 text-white font-bold rounded-lg">Tutup Daftar Soal</button>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- SCRIPT LOGIKA -->
+    <script>
+        // --- DATA SOAL MATEMATIKA KELAS 7 SMT GENAP (40 SOAL) ---
+        // Topik: Perbandingan, Aritmatika Sosial, Garis & Sudut, Bangun Datar, Statistika
+        const dbSoal = [
+            // PERBANDINGAN (1-8)
+            { id: 1, text: "Bentuk paling sederhana dari perbandingan 40 menit : 1,5 jam adalah...", options: ["4 : 15", "4 : 9", "2 : 3", "8 : 15"], answer: 1, explanation: "1,5 jam = 90 menit. 40 : 90 disederhanakan menjadi 4 : 9." },
+            { id: 2, text: "Skala sebuah peta adalah 1 : 250.000. Jika jarak pada peta 8 cm, maka jarak sebenarnya adalah...", options: ["2 km", "20 km", "200 km", "2000 km"], answer: 1, explanation: "Jarak sebenarnya = 8 cm x 250.000 = 2.000.000 cm = 20 km." },
+            { id: 3, text: "Untuk membuat 60 pasang pakaian, seorang penjahit memerlukan waktu 18 hari. Jika penjahit tersebut bekerja selama 24 hari, pakaian yang dapat dibuat sebanyak...", options: ["40 pasang", "75 pasang", "80 pasang", "90 pasang"], answer: 2, explanation: "Perbandingan senilai. (24 / 18) x 60 = (4/3) x 60 = 80 pasang." },
+            { id: 4, text: "Suatu pekerjaan dapat diselesaikan oleh 15 pekerja dalam waktu 12 minggu. Jika pekerjaan itu harus selesai dalam 9 minggu, banyak pekerja yang harus ditambahkan adalah...", options: ["3 orang", "4 orang", "5 orang", "20 orang"], answer: 2, explanation: "Perbandingan berbalik nilai. 15 x 12 = X x 9 -> X = 180 / 9 = 20 pekerja. Tambahan = 20 - 15 = 5 orang." },
+            { id: 5, text: "Perbandingan uang Andi dan Budi adalah 3 : 5. Jika jumlah uang mereka Rp 400.000, selisih uang mereka adalah...", options: ["Rp 50.000", "Rp 100.000", "Rp 150.000", "Rp 250.000"], answer: 1, explanation: "Selisih perbandingan = 5 - 3 = 2. Jumlah perbandingan = 8. Selisih uang = (2/8) x Rp 400.000 = Rp 100.000." },
+            { id: 6, text: "Sebuah mobil memerlukan 5 liter bensin untuk menempuh jarak 60 km. Jika mobil tersebut menghabiskan 40 liter bensin, jarak yang ditempuh adalah...", options: ["200 km", "240 km", "300 km", "480 km"], answer: 3, explanation: "60 km / 5 L = 12 km/L. Jarak = 40 L x 12 km/L = 480 km." },
+            { id: 7, text: "Harga 3 lusin pensil adalah Rp 54.000. Harga 5 buah pensil yang sama adalah...", options: ["Rp 6.000", "Rp 7.500", "Rp 9.000", "Rp 10.500"], answer: 1, explanation: "3 lusin = 36 buah. Harga 1 pensil = 54.000 / 36 = Rp 1.500. Harga 5 pensil = 5 x 1.500 = Rp 7.500." },
+            { id: 8, text: "Sebuah asrama memiliki persediaan beras untuk 20 orang selama 15 hari. Jika penghuni asrama bertambah 5 orang, persediaan beras akan habis dalam waktu...", options: ["10 hari", "12 hari", "15 hari", "20 hari"], answer: 1, explanation: "Penghuni menjadi 25. Perbandingan berbalik nilai: 20 x 15 = 25 x H -> 300 = 25H -> H = 12 hari." },
+            
+            // ARITMATIKA SOSIAL (9-16)
+            { id: 9, text: "Seorang pedagang membeli sepatu seharga Rp 150.000 dan menjualnya dengan harga Rp 180.000. Persentase keuntungan pedagang tersebut adalah...", options: ["15%", "20%", "25%", "30%"], answer: 1, explanation: "Untung = 180.000 - 150.000 = 30.000. %Untung = (30.000 / 150.000) x 100% = 20%." },
+            { id: 10, text: "Sebuah baju seharga Rp 200.000 didiskon 25%. Harga baju setelah diskon adalah...", options: ["Rp 125.000", "Rp 150.000", "Rp 175.000", "Rp 180.000"], answer: 1, explanation: "Diskon = 25% x 200.000 = 50.000. Harga bayar = 200.000 - 50.000 = Rp 150.000." },
+            { id: 11, text: "Andi menabung di bank sebesar Rp 2.000.000 dengan bunga tunggal 12% pertahun. Jumlah tabungan Andi setelah 9 bulan adalah...", options: ["Rp 2.180.000", "Rp 2.240.000", "Rp 2.120.000", "Rp 2.150.000"], answer: 0, explanation: "Bunga = 9/12 x 12% x 2.000.000 = Rp 180.000. Total = 2.000.000 + 180.000 = Rp 2.180.000." },
+            { id: 12, text: "Bruto dari sebuah barang adalah 50 kg dan taranya 2%. Netto barang tersebut adalah...", options: ["48 kg", "49 kg", "49,5 kg", "51 kg"], answer: 1, explanation: "Tara = 2% x 50 kg = 1 kg. Netto = Bruto - Tara = 50 - 1 = 49 kg." },
+            { id: 13, text: "Harga pembelian 2 lusin buku adalah Rp 96.000. Jika buku dijual eceran Rp 5.000 per buah, maka pedagang akan mengalami...", options: ["Untung Rp 24.000", "Rugi Rp 24.000", "Untung Rp 12.000", "Rugi Rp 12.000"], answer: 0, explanation: "2 lusin = 24 buah. Harga jual total = 24 x 5.000 = 120.000. Untung = 120.000 - 96.000 = Rp 24.000." },
+            { id: 14, text: "Pajak Pertambahan Nilai (PPN) sebuah barang adalah 11%. Jika harga barang sebelum PPN adalah Rp 3.000.000, uang yang harus dibayarkan pembeli adalah...", options: ["Rp 3.110.000", "Rp 3.300.000", "Rp 3.330.000", "Rp 3.600.000"], answer: 2, explanation: "PPN = 11% x 3.000.000 = 330.000. Harga bayar = 3.000.000 + 330.000 = Rp 3.330.000." },
+            { id: 15, text: "Seorang pedagang mengalami kerugian 10% setelah menjual barang seharga Rp 450.000. Harga beli barang tersebut adalah...", options: ["Rp 400.000", "Rp 495.000", "Rp 500.000", "Rp 550.000"], answer: 2, explanation: "Harga Jual = 90% dari Harga Beli. Harga Beli = (100/90) x 450.000 = Rp 500.000." },
+            { id: 16, text: "Pada sebuah kemasan tertulis Bruto = 25 kg, Netto = 24,5 kg. Berapakah persentase taranya?", options: ["0,5%", "1%", "2%", "2,5%"], answer: 2, explanation: "Tara = 25 - 24,5 = 0,5 kg. %Tara = (0,5 / 25) x 100% = 2%." },
+
+            // GARIS DAN SUDUT (17-24)
+            { id: 17, text: "Sudut yang besarnya antara 90 derajat dan 180 derajat disebut sudut...", options: ["Lancip", "Tumpul", "Siku-siku", "Refleks"], answer: 1, explanation: "Sudut tumpul adalah sudut yang besarnya lebih dari 90° dan kurang dari 180°." },
+            { id: 18, text: "Penyiku dari sudut 38 derajat adalah...", options: ["52 derajat", "62 derajat", "142 derajat", "152 derajat"], answer: 0, explanation: "Sudut saling berpenyiku berjumlah 90°. 90° - 38° = 52°." },
+            { id: 19, text: "Pelurus dari sudut 115 derajat adalah...", options: ["65 derajat", "75 derajat", "85 derajat", "95 derajat"], answer: 0, explanation: "Sudut saling berpelurus berjumlah 180°. 180° - 115° = 65°." },
+            { id: 20, text: "Dua buah sudut saling bertolak belakang. Jika sudut pertama besarnya (3x + 10) derajat dan sudut kedua 70 derajat, maka nilai x adalah...", options: ["10", "15", "20", "25"], answer: 2, explanation: "Sudut bertolak belakang besarnya sama. 3x + 10 = 70 -> 3x = 60 -> x = 20." },
+            { id: 21, text: "Pada dua garis sejajar yang dipotong garis lain, pasangan sudut dalam berseberangan adalah...", options: ["Sama besar", "Berjumlah 90 derajat", "Berjumlah 180 derajat", "Tidak ada hubungan"], answer: 0, explanation: "Sifat garis sejajar: sudut-sudut dalam berseberangan besarnya selalu sama." },
+            { id: 22, text: "Jika sudut A dan B saling berpelurus, dan besar sudut A = 4 kali sudut B, maka besar sudut A adalah...", options: ["36 derajat", "72 derajat", "108 derajat", "144 derajat"], answer: 3, explanation: "A + B = 180. 4B + B = 180 -> 5B = 180 -> B = 36°. A = 4 x 36° = 144°." },
+            { id: 23, text: "Besar sudut terkecil yang dibentuk oleh jarum jam pada pukul 04.00 adalah...", options: ["90 derajat", "120 derajat", "150 derajat", "180 derajat"], answer: 1, explanation: "Setiap 1 jam mewakili 360°/12 = 30°. Pukul 04.00 berarti 4 x 30° = 120°." },
+            { id: 24, text: "Pasangan sudut luar sepihak jika dijumlahkan akan menghasilkan sudut sebesar...", options: ["90 derajat", "180 derajat", "270 derajat", "360 derajat"], answer: 1, explanation: "Pada garis sejajar, sudut-sudut luar sepihak berjumlah 180° (saling berpelurus)." },
+
+            // BANGUN DATAR (25-32)
+            { id: 25, text: "Keliling sebuah persegi panjang adalah 60 cm. Jika panjangnya 18 cm, maka lebarnya adalah...", options: ["10 cm", "12 cm", "14 cm", "15 cm"], answer: 1, explanation: "K = 2(p+l) -> 60 = 2(18+l) -> 30 = 18+l -> l = 12 cm." },
+            { id: 26, text: "Luas sebuah segitiga adalah 84 cm2 dan panjang alasnya 12 cm. Tinggi segitiga tersebut adalah...", options: ["7 cm", "12 cm", "14 cm", "16 cm"], answer: 2, explanation: "L = 1/2 x a x t -> 84 = 1/2 x 12 x t -> 84 = 6t -> t = 14 cm." },
+            { id: 27, text: "Jumlah sudut-sudut dalam sebuah segitiga adalah...", options: ["90 derajat", "180 derajat", "270 derajat", "360 derajat"], answer: 1, explanation: "Teorema dasar: jumlah ketiga sudut dalam setiap segitiga selalu 180°." },
+            { id: 28, text: "Luas belah ketupat yang memiliki diagonal 16 cm dan 12 cm adalah...", options: ["48 cm2", "96 cm2", "192 cm2", "200 cm2"], answer: 1, explanation: "L = 1/2 x d1 x d2 = 1/2 x 16 x 12 = 8 x 12 = 96 cm²." },
+            { id: 29, text: "Sebuah jajargenjang memiliki alas 15 cm dan tinggi 8 cm. Luas jajargenjang tersebut adalah...", options: ["60 cm2", "90 cm2", "120 cm2", "240 cm2"], answer: 2, explanation: "Luas Jajargenjang = alas x tinggi = 15 x 8 = 120 cm²." },
+            { id: 30, text: "Pada segitiga siku-siku sama kaki, besar salah satu sudut lancipnya adalah...", options: ["30 derajat", "45 derajat", "60 derajat", "90 derajat"], answer: 1, explanation: "Siku-siku = 90°. Sisa 180° - 90° = 90°. Karena sama kaki, dua sudut lainnya sama besar yaitu 90° / 2 = 45°." },
+            { id: 31, text: "Sebuah layang-layang memiliki luas 150 cm2. Jika panjang salah satu diagonalnya 15 cm, panjang diagonal yang lain adalah...", options: ["10 cm", "15 cm", "20 cm", "30 cm"], answer: 2, explanation: "L = 1/2 x d1 x d2 -> 150 = 1/2 x 15 x d2 -> 300 = 15 x d2 -> d2 = 20 cm." },
+            { id: 32, text: "Keliling persegi yang luasnya 144 cm2 adalah...", options: ["12 cm", "24 cm", "36 cm", "48 cm"], answer: 3, explanation: "Luas = s x s -> 144 = s² -> s = 12 cm. Keliling = 4 x s = 4 x 12 = 48 cm." },
+
+            // STATISTIKA (33-40)
+            { id: 33, text: "Data nilai ulangan matematika Ani: 7, 8, 6, 9, 8, 7, 8, 9. Modus dari data tersebut adalah...", options: ["6", "7", "8", "9"], answer: 2, explanation: "Modus adalah nilai yang paling sering muncul. Angka 8 muncul sebanyak 3 kali (paling banyak)." },
+            { id: 34, text: "Rata-rata (mean) dari data 5, 6, 7, 8, 9 adalah...", options: ["6", "7", "7,5", "8"], answer: 1, explanation: "Mean = (5+6+7+8+9) / 5 = 35 / 5 = 7." },
+            { id: 35, text: "Median dari data 4, 6, 8, 5, 7, 9, 7 adalah...", options: ["6", "6,5", "7", "7,5"], answer: 2, explanation: "Urutkan data: 4, 5, 6, 7, 7, 8, 9. Nilai tengahnya (data ke-4) adalah 7." },
+            { id: 36, text: "Rata-rata nilai ulangan 9 siswa adalah 70. Jika nilai Budi digabungkan, rata-ratanya menjadi 72. Nilai Budi adalah...", options: ["80", "85", "90", "92"], answer: 2, explanation: "Total awal = 9 x 70 = 630. Total baru = 10 x 72 = 720. Nilai Budi = 720 - 630 = 90." },
+            { id: 37, text: "Diagram yang paling tepat untuk menyajikan data perkembangan suhu pasien dari waktu ke waktu adalah...", options: ["Diagram batang", "Diagram garis", "Diagram lingkaran", "Piktogram"], answer: 1, explanation: "Diagram garis sangat tepat untuk menunjukkan perubahan data yang kontinu (berkelanjutan) terhadap waktu." },
+            { id: 38, text: "Pada diagram lingkaran, persentase untuk daerah yang mewakili sudut pusat 90 derajat adalah...", options: ["20%", "25%", "30%", "40%"], answer: 1, explanation: "Lingkaran penuh = 360°. Persentase = (90° / 360°) x 100% = 1/4 x 100% = 25%." },
+            { id: 39, text: "Banyak pengunjung perpustakaan selama 5 hari: Senin 20, Selasa 30, Rabu x, Kamis 25, Jumat 35. Jika rata-rata pengunjung 28 orang/hari, banyak pengunjung hari Rabu adalah...", options: ["20", "25", "30", "35"], answer: 2, explanation: "Total pengunjung = 5 x 28 = 140. 20 + 30 + x + 25 + 35 = 140 -> 110 + x = 140 -> x = 30." },
+            { id: 40, text: "Jangkauan (range) dari data: 12, 15, 10, 20, 18, 14, 25 adalah...", options: ["10", "13", "15", "25"], answer: 2, explanation: "Jangkauan = Nilai Tertinggi - Nilai Terendah = 25 - 10 = 15." }
+        ];
+
+        // --- VARIABEL STATE APLIKASI ---
+        let currentQuestion = 0;
+        let userAnswers = new Array(dbSoal.length).fill(null);
+        let timeLeft = 90 * 60; // 90 menit dalam detik
+        let timerInterval;
+        let warningCount = 0;
+        const MAX_WARNINGS = 2;
+        let examStatus = 'idle'; // idle, running, finished
+        let studentData = { nama: '', kelas: '' };
+
+        // URL Web App Google Apps Script Anda (GANTI DENGAN URL ASLI ANDA NANTI)
+        const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyI4Zl0bw5uvekw2IFO66vDtSASXsDlM-YK2ZRZ8NX5nWiSbZYJuADq5aNEAQmkjLV9wA/exec";
+
+        // --- SISTEM ANTI KECURANGAN ---
+        
+        // 1. Deteksi Ganti Tab / Minimize
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && examStatus === 'running') {
+                triggerWarning("Anda terdeteksi keluar dari halaman ujian atau mengganti tab!");
+            }
+        });
+
+        // 2. Deteksi Kehilangan Fokus (Buka aplikasi overlay)
+        window.addEventListener('blur', () => {
+            if (examStatus === 'running') {
+                triggerWarning("Layar ujian kehilangan fokus (mungkin Anda membuka panel/aplikasi lain)!");
+            }
+        });
+
+        // 3. Blokir Keyboard Shortcut (Ctrl+C, Ctrl+V, PrintScreen, F12)
+        document.addEventListener('keydown', (e) => {
+            if (examStatus !== 'running') return;
+            
+            // F12 atau Ctrl+Shift+I (DevTools)
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+                e.preventDefault();
+            }
+            // Ctrl+C, Ctrl+V (Copy Paste)
+            if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'C' || e.key === 'V')) {
+                e.preventDefault();
+                Swal.fire('Dilarang!', 'Tindakan Copy/Paste dinonaktifkan.', 'warning');
+            }
+            // Print Screen
+            if (e.key === 'PrintScreen') {
+                navigator.clipboard.writeText(''); // Clear clipboard attempt
+                triggerWarning("Anda terdeteksi mencoba melakukan Screenshot!");
+            }
+        });
+
+        // Fungsi Menangani Peringatan
+        function triggerWarning(reason) {
+            warningCount++;
+            document.getElementById('warning-display').innerText = `Peringatan: ${warningCount}/${MAX_WARNINGS}`;
+            
+            if (warningCount > MAX_WARNINGS) {
+                // Diskualifikasi
+                Swal.fire({
+                    title: 'PELANGGARAN MAKSIMAL!',
+                    text: 'Anda telah melanggar aturan lebih dari 2 kali. Ujian otomatis dikumpulkan.',
+                    icon: 'error',
+                    allowOutsideClick: false,
+                    confirmButtonText: 'Tutup'
+                }).then(() => {
+                    forceSubmitExam();
+                });
+            } else {
+                Swal.fire({
+                    title: 'PERINGATAN!',
+                    html: `<b>${reason}</b><br><br>Ini adalah peringatan ke-${warningCount} dari maksimal ${MAX_WARNINGS}.<br>Jika melanggar lebih dari 2 kali, ujian otomatis diakhiri.`,
+                    icon: 'warning',
+                    confirmButtonColor: '#d33'
+                });
+            }
+        }
+
+        // --- LOGIKA UJIAN ---
+
+        function startExam() {
+            const nama = document.getElementById('student-name').value.trim();
+            const kelas = document.getElementById('student-class').value;
+
+            if (!nama || !kelas) {
+                Swal.fire('Error', 'Nama dan Kelas wajib diisi!', 'error');
+                return;
+            }
+
+            studentData.nama = nama;
+            studentData.kelas = kelas;
+
+            // Transisi UI
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('exam-section').classList.remove('hidden');
+            document.getElementById('exam-footer').classList.remove('hidden');
+            document.getElementById('header-info').classList.remove('hidden');
+
+            // Masuk Fullscreen (khusus HP/Desktop yang support)
+            try {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            } catch(e) {}
+
+            examStatus = 'running';
+            
+            // Inisiasi Grid Soal & Render Soal Pertama
+            renderQuestionGrid();
+            loadQuestion(0);
+            
+            // Mulai Timer
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                Swal.fire('Waktu Habis!', 'Waktu ujian Anda telah habis. Jawaban akan disubmit otomatis.', 'info')
+                .then(() => forceSubmitExam());
+                return;
+            }
+            timeLeft--;
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${m}:${s}`;
+            
+            if(timeLeft === 300) { // 5 menit terakhir
+                document.getElementById('timer-display').classList.add('text-red-300', 'animate-pulse');
+            }
+        }
+
+        function loadQuestion(index) {
+            currentQuestion = index;
+            const q = dbSoal[index];
+            
+            document.getElementById('current-question-num').innerText = index + 1;
+            document.getElementById('question-text').innerText = q.text;
+
+            const optsContainer = document.getElementById('options-container');
+            optsContainer.innerHTML = '';
+            
+            const abcd = ['A', 'B', 'C', 'D'];
+            
+            q.options.forEach((opt, i) => {
+                const isChecked = userAnswers[index] === i ? 'checked' : '';
+                const html = `
+                    <div class="relative">
+                        <input type="radio" name="q_option" id="opt_${i}" value="${i}" class="option-input peer sr-only" onchange="saveAnswer(${index}, ${i})" ${isChecked}>
+                        <label for="opt_${i}" class="option-label flex items-center p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:ring-1 peer-checked:ring-blue-500">
+                            <span class="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-700 font-bold rounded-full mr-4 peer-checked:bg-blue-600 peer-checked:text-white transition-colors">${abcd[i]}</span>
+                            <span class="text-gray-700 text-lg">${opt}</span>
+                        </label>
+                    </div>
+                `;
+                optsContainer.insertAdjacentHTML('beforeend', html);
+            });
+
+            // Update Tombol Navigasi
+            document.getElementById('btn-prev').disabled = index === 0;
+            
+            if (index === dbSoal.length - 1) {
+                document.getElementById('btn-next').classList.add('hidden');
+                document.getElementById('btn-submit').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-next').classList.remove('hidden');
+                document.getElementById('btn-submit').classList.add('hidden');
+            }
+        }
+
+        function saveAnswer(qIndex, optIndex) {
+            userAnswers[qIndex] = optIndex;
+            // Update warna di grid soal
+            const btnGrid = document.getElementById(`grid-btn-${qIndex}`);
+            if(btnGrid) {
+                btnGrid.classList.remove('bg-white', 'border-gray-300', 'text-gray-700');
+                btnGrid.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < dbSoal.length - 1) {
+                loadQuestion(currentQuestion + 1);
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                loadQuestion(currentQuestion - 1);
+            }
+        }
+
+        function jumpToQuestion(index) {
+            loadQuestion(index);
+            toggleQuestionList(); // Tutup modal
+        }
+
+        // --- GRID DAFTAR SOAL ---
+
+        function renderQuestionGrid() {
+            const grid = document.getElementById('grid-soal-container');
+            grid.innerHTML = '';
+            for(let i=0; i<dbSoal.length; i++) {
+                const isAns = userAnswers[i] !== null;
+                const baseClass = "w-full aspect-square flex items-center justify-center rounded-lg font-bold text-sm cursor-pointer border transition-colors";
+                const colorClass = isAns ? "bg-blue-600 text-white border-blue-600" : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50";
+                
+                grid.insertAdjacentHTML('beforeend', `
+                    <button id="grid-btn-${i}" onclick="jumpToQuestion(${i})" class="${baseClass} ${colorClass}">
+                        ${i+1}
+                    </button>
+                `);
+            }
+        }
+
+        function toggleQuestionList() {
+            const modal = document.getElementById('question-list-modal');
+            if (modal.classList.contains('hidden')) {
+                renderQuestionGrid(); // Refresh warna
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // --- SUBMISSION & RESULT ---
+
+        function submitExamPrompt() {
+            const unanswered = userAnswers.filter(a => a === null).length;
+            let textMsg = unanswered > 0 
+                ? `Masih ada ${unanswered} soal yang belum dijawab. Yakin ingin mengumpulkan?` 
+                : 'Anda sudah menjawab semua soal. Yakin ingin mengumpulkan?';
+
+            Swal.fire({
+                title: 'Kumpulkan Ujian?',
+                text: textMsg,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Kumpulkan!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    forceSubmitExam();
+                }
+            });
+        }
+
+        function forceSubmitExam() {
+            clearInterval(timerInterval);
+            examStatus = 'finished';
+            
+            // Keluar dari Fullscreen
+            try {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(e=>console.log(e));
+                }
+            } catch(e){}
+
+            // Hitung Nilai
+            let correct = 0;
+            dbSoal.forEach((q, i) => {
+                if (userAnswers[i] === q.answer) correct++;
+            });
+            
+            const wrong = dbSoal.length - correct;
+            const score = (correct / dbSoal.length) * 100;
+
+            // Sembunyikan Ujian, Tampilkan Hasil
+            document.getElementById('exam-section').classList.add('hidden');
+            document.getElementById('exam-footer').classList.add('hidden');
+            document.getElementById('header-info').classList.add('hidden');
+            document.getElementById('question-list-modal').classList.add('hidden');
+            
+            document.getElementById('result-section').classList.remove('hidden');
+
+            // Render Info Nilai
+            document.getElementById('result-student-info').innerText = `${studentData.nama} - Kelas ${studentData.kelas}`;
+            document.getElementById('result-score').innerText = score.toFixed(1).replace('.0', '');
+            document.getElementById('result-correct').innerText = correct;
+            document.getElementById('result-wrong').innerText = wrong;
+
+            // Render Pembahasan
+            renderReview();
+
+            // Kirim ke Spreadsheet (Silently)
+            sendDataToSheet(studentData.nama, studentData.kelas, correct, wrong, score.toFixed(1));
+        }
+
+        function renderReview() {
+            const container = document.getElementById('review-container');
+            container.innerHTML = '';
+            const abcd = ['A', 'B', 'C', 'D'];
+
+            dbSoal.forEach((q, i) => {
+                const userAns = userAnswers[i];
+                const isCorrect = userAns === q.answer;
+                const statusColor = isCorrect ? 'bg-green-100 border-green-300' : 'bg-red-100 border-red-300';
+                const statusIcon = isCorrect ? '<i class="fas fa-check text-green-600"></i>' : '<i class="fas fa-times text-red-600"></i>';
+                
+                let userAnsText = userAns !== null ? `${abcd[userAns]}. ${q.options[userAns]}` : 'Tidak dijawab';
+                let correctAnsText = `${abcd[q.answer]}. ${q.options[q.answer]}`;
+
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="border rounded-lg p-4 ${statusColor}">
+                        <div class="font-bold text-gray-800 mb-2">Soal ${i+1}</div>
+                        <p class="text-gray-700 mb-3 text-sm">${q.text}</p>
+                        <div class="text-sm grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                            <div class="bg-white/60 p-2 rounded">
+                                <span class="text-xs text-gray-500 block">Jawaban Anda:</span>
+                                <span class="${isCorrect ? 'text-green-700 font-bold' : 'text-red-700 font-bold'}">${statusIcon} ${userAnsText}</span>
+                            </div>
+                            <div class="bg-white/60 p-2 rounded">
+                                <span class="text-xs text-gray-500 block">Jawaban Benar:</span>
+                                <span class="text-gray-800 font-bold">${correctAnsText}</span>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 border border-blue-200 p-3 rounded text-sm">
+                            <span class="font-bold text-blue-800"><i class="fas fa-lightbulb text-yellow-500 mr-1"></i> Pembahasan:</span>
+                            <p class="mt-1 text-gray-700">${q.explanation}</p>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        // --- INTEGRASI SPREADSHEET (MOCKUP/TEMPLATE) ---
+        function sendDataToSheet(nama, kelas, benar, salah, nilai) {
+            // Data payload
+            const formData = new FormData();
+            formData.append('nama', nama);
+            formData.append('kelas', kelas);
+            formData.append('benar', benar);
+            formData.append('salah', salah);
+            formData.append('nilai', nilai);
+            formData.append('waktu_selesai', new Date().toLocaleString('id-ID'));
+
+            // CATATAN PENTING: 
+            // Karena ini lingkungan tanpa backend, script di bawah tidak akan jalan 
+            // tanpa URL Google Apps Script yang sah. 
+            // Ini dibungkus dengan try/catch agar tidak error di sisi user.
+            
+            try {
+                fetch(GOOGLE_SHEET_URL, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'no-cors' // Penting untuk Google Scripts
+                }).then(() => {
+                    console.log("Data berhasil dikirim ke Spreadsheet (Simulasi)");
+                }).catch(e => console.log("Gagal mengirim data", e));
+            } catch (err) {
+                console.log(err);
+            }
+        }
+    </script>
+</body>
+</html>
